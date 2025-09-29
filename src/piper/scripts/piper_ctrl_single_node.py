@@ -85,7 +85,10 @@ class C_PiperRosNode():
             self.gripper_val_mutiple = 1  # 设置为默认值
         rospy.loginfo("%s is %s", rospy.resolve_name('~gripper_val_mutiple'), self.gripper_val_mutiple)
         # publish
-        self.joint_pub = rospy.Publisher('joint_states_single', JointState, queue_size=1)
+        # self.joint_pub = rospy.Publisher('joint_states_single', JointState, queue_size=1)
+        self.arm_joint_pub = rospy.Publisher('arm_joint_states', JointState, queue_size=1)
+        self.gripper_joint_pub = rospy.Publisher('gripper_joint_states', JointState, queue_size=1)
+
         self.arm_status_pub = rospy.Publisher('arm_status', PiperStatusMsg, queue_size=1)
         # self.end_pose_euler_pub = rospy.Publisher('end_pose_euler', PosCmd, queue_size=1)
         self.end_pose_pub = rospy.Publisher('end_pose', PoseStamped, queue_size=1)
@@ -114,14 +117,20 @@ class C_PiperRosNode():
         sub_pos_th = threading.Thread(target=self.SubPosThread)
         sub_pos_th.daemon = True
         sub_pos_th.start()
-        sub_joint_th = threading.Thread(target=self.SubJointThread)
+        # sub_joint_th = threading.Thread(target=self.SubJointThread)
         sub_enable_th = threading.Thread(target=self.SubEnableThread)
+        sub_arm_joint_th = threading.Thread(target=self.SubArmJointThread)
+        sub_arm_gripper_th = threading.Thread(target=self.SubGripperJointThread)
         
-        sub_joint_th.daemon = True
+        # sub_joint_th.daemon = True
         sub_enable_th.daemon = True
+        sub_arm_joint_th.daemon = True
+        sub_arm_gripper_th.daemon = True
         
-        sub_joint_th.start()
+        # sub_joint_th.start()
         sub_enable_th.start()
+        sub_arm_joint_th.start()
+        sub_arm_gripper_th.start()
 
     def GetEnableFlag(self):
         return self.__enable_flag
@@ -168,7 +177,9 @@ class C_PiperRosNode():
             # 发布消息
             self.PublishArmState()
             self.PublishArmEndPose()
-            self.PublishArmJointAndGripper()
+            # self.PublishArmJointAndGripper()
+            self.PublishArmJoint()
+            self.PublishGripperJoint()
             rate.sleep()
 
     def PublishArmState(self):
@@ -194,7 +205,52 @@ class C_PiperRosNode():
         arm_status.communication_status_joint_5 = self.piper.GetArmStatus().arm_status.err_status.communication_status_joint_5
         arm_status.communication_status_joint_6 = self.piper.GetArmStatus().arm_status.err_status.communication_status_joint_6
         self.arm_status_pub.publish(arm_status)
-        
+
+    def PublishGripperJoint(self):
+        joint_6:float = self.piper.GetArmGripperMsgs().gripper_state.grippers_angle/1000000
+        effort_6:float = self.piper.GetArmGripperMsgs().gripper_state.grippers_effort/1000
+        joint_states = JointState()
+        joint_states.name = ['gripper']
+        joint_states.position = [0.0]
+        joint_states.velocity = [0.0]
+        joint_states.effort = [0.0]
+        joint_states.header.stamp = rospy.Time.now()
+        joint_states.position = [joint_6]
+        joint_states.effort = [effort_6]
+        # 发布所有消息
+        self.gripper_joint_pub.publish(joint_states)
+
+    def PublishArmJoint(self):
+        joint_0:float = (self.piper.GetArmJointMsgs().joint_state.joint_1/1000) * 0.017444
+        joint_1:float = (self.piper.GetArmJointMsgs().joint_state.joint_2/1000) * 0.017444
+        joint_2:float = (self.piper.GetArmJointMsgs().joint_state.joint_3/1000) * 0.017444
+        joint_3:float = (self.piper.GetArmJointMsgs().joint_state.joint_4/1000) * 0.017444
+        joint_4:float = (self.piper.GetArmJointMsgs().joint_state.joint_5/1000) * 0.017444
+        joint_5:float = (self.piper.GetArmJointMsgs().joint_state.joint_6/1000) * 0.017444
+        vel_0:float = self.piper.GetArmHighSpdInfoMsgs().motor_1.motor_speed/1000
+        vel_1:float = self.piper.GetArmHighSpdInfoMsgs().motor_2.motor_speed/1000
+        vel_2:float = self.piper.GetArmHighSpdInfoMsgs().motor_3.motor_speed/1000
+        vel_3:float = self.piper.GetArmHighSpdInfoMsgs().motor_4.motor_speed/1000
+        vel_4:float = self.piper.GetArmHighSpdInfoMsgs().motor_5.motor_speed/1000
+        vel_5:float = self.piper.GetArmHighSpdInfoMsgs().motor_6.motor_speed/1000
+        effort_0:float = self.piper.GetArmHighSpdInfoMsgs().motor_1.effort/1000
+        effort_1:float = self.piper.GetArmHighSpdInfoMsgs().motor_2.effort/1000
+        effort_2:float = self.piper.GetArmHighSpdInfoMsgs().motor_3.effort/1000
+        effort_3:float = self.piper.GetArmHighSpdInfoMsgs().motor_4.effort/1000
+        effort_4:float = self.piper.GetArmHighSpdInfoMsgs().motor_5.effort/1000
+        effort_5:float = self.piper.GetArmHighSpdInfoMsgs().motor_6.effort/1000
+        joint_states = JointState()
+        joint_states.name = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
+        joint_states.position = [0.0] * 6
+        joint_states.velocity = [0.0] * 6
+        joint_states.effort = [0.0] * 6
+        joint_states.header.stamp = rospy.Time.now()
+        joint_states.position = [joint_0,joint_1, joint_2, joint_3, joint_4, joint_5]
+        joint_states.velocity = [vel_0, vel_1, vel_2, vel_3, vel_4, vel_5]
+        joint_states.effort = [effort_0, effort_1, effort_2, effort_3, effort_4, effort_5]
+        # 发布所有消息
+        self.arm_joint_pub.publish(joint_states)
+
     def PublishArmJointAndGripper(self):
         # 机械臂关节角和夹爪位置
         # 由于获取的原始数据是度为单位扩大了1000倍，因此要转为弧度需要先除以1000，再乘3.14/180，然后限制小数点位数为5位
@@ -262,7 +318,15 @@ class C_PiperRosNode():
         """
         rospy.Subscriber('pos_cmd', PosCmd, self.pos_callback, queue_size=1, tcp_nodelay=True)
         rospy.spin()
-    
+
+    def SubGripperJointThread(self):
+        rospy.Subscriber('gripper_joint_command', JointState, self.gripper_joint_callback, queue_size=1, tcp_nodelay=True)
+        rospy.spin()
+
+    def SubArmJointThread(self):
+        rospy.Subscriber('arm_joint_command', JointState, self.arm_joint_callback, queue_size=1, tcp_nodelay=True)
+        rospy.spin()
+
     def SubJointThread(self):
         """机械臂关节订阅
         
@@ -323,7 +387,47 @@ class C_PiperRosNode():
                 if(self.gripper_exist):
                     self.piper.GripperCtrl(abs(gripper), 1000, 0x01, 0)
                 self.piper.MotionCtrl_2(0x01, 0x00, 50)
-    
+
+    def arm_joint_callback(self, joint_data):
+        """机械臂关节角回调函数 wo gripper
+        """
+        if not self.block_ctrl_flag:
+            factor = 57324.840764 #1000*180/3.14
+            factor = 1000 * 180 / np.pi
+            joint_0 = round(joint_data.position[0]*factor)
+            joint_1 = round(joint_data.position[1]*factor)
+            joint_2 = round(joint_data.position[2]*factor)
+            joint_3 = round(joint_data.position[3]*factor)
+            joint_4 = round(joint_data.position[4]*factor)
+            joint_5 = round(joint_data.position[5]*factor)
+
+            if(self.GetEnableFlag()):
+                self.piper.MotionCtrl_2(0x01, 0x01, 100,0)
+                # 给定关节角位置
+                self.piper.JointCtrl(joint_0, joint_1, joint_2,
+                                     joint_3, joint_4, joint_5)
+
+
+    def gripper_joint_callback(self, joint_data):
+        """机械臂夹爪关节角回调函数
+        """
+        if not self.block_ctrl_flag:
+            joint_6 = round(joint_data.position[0]*1000*1000)
+            joint_6 = joint_6 * self.gripper_val_mutiple
+            if(joint_6>80000): joint_6 = 80000
+            if(joint_6<0): joint_6 = 0
+
+            if(self.gripper_exist and joint_6 is not None):
+                if abs(joint_6)<200:
+                    joint_6=0
+                if(len(joint_data.effort) >= 1):
+                    gripper_effort = joint_data.effort[0]
+                    gripper_effort = max(0.5, min(gripper_effort, 3))
+                    gripper_effort = round(gripper_effort*1000)
+                    self.piper.GripperCtrl(abs(joint_6), gripper_effort, 0x01, 0)
+                # 默认1N
+                else: self.piper.GripperCtrl(abs(joint_6), 1000, 0x01, 0)
+
     def joint_callback(self, joint_data):
         """机械臂关节角回调函数
 
@@ -348,7 +452,7 @@ class C_PiperRosNode():
             joint_3 = round(joint_data.position[3]*factor)
             joint_4 = round(joint_data.position[4]*factor)
             joint_5 = round(joint_data.position[5]*factor)
-            if(len(joint_data.position) >= 7):
+            if(len(joint_data.position) >= 7): # for gripper
                 joint_6 = round(joint_data.position[6]*1000*1000)
                 joint_6 = joint_6 * self.gripper_val_mutiple
                 if(joint_6>80000): joint_6 = 80000
