@@ -402,7 +402,7 @@ class C_PiperRosNode():
             joint_5 = round(joint_data.position[5]*factor)
 
             if(self.GetEnableFlag()):
-                self.piper.MotionCtrl_2(0x01, 0x01, 100,0)
+                self.piper.MotionCtrl_2(0x01, 0x01, 100, 0)
                 # 给定关节角位置
                 self.piper.JointCtrl(joint_0, joint_1, joint_2,
                                      joint_3, joint_4, joint_5)

@@ -201,7 +201,7 @@ roslaunch piper start_single_piper_rviz.launch
 **NB:** 以上作废，按照下面topic
 ```shell
 /arm_joint 机械臂除夹爪的6个关节的控制输入
-/gripper_joint 夹爪关节(1个)控制输入
+/gripper_joint 夹爪关节(1个)控制输入 unit m and N
 /arm_joint_states 机械臂除夹爪的6个关节的状态反馈
 /gripper_joint_states 夹爪关节(1个)状态反馈
 ```
