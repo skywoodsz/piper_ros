@@ -414,7 +414,7 @@ class C_PiperRosNode():
         if not self.block_ctrl_flag:
             joint_6 = round(joint_data.position[0]*1000*1000)
             joint_6 = joint_6 * self.gripper_val_mutiple
-            if(joint_6>80000): joint_6 = 80000
+            if(joint_6>100000): joint_6 = 100000
             if(joint_6<0): joint_6 = 0
 
             if(self.gripper_exist and joint_6 is not None):
