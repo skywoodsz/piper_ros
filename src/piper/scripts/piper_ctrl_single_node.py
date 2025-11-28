@@ -424,9 +424,10 @@ class C_PiperRosNode():
                     gripper_effort = joint_data.effort[0]
                     gripper_effort = max(0.5, min(gripper_effort, 3))
                     gripper_effort = round(gripper_effort*1000)
-                    self.piper.GripperCtrl(abs(joint_6), gripper_effort, 0x01, 0)
+                    # self.piper.GripperCtrl(abs(joint_6), gripper_effort, 0x01, 0)
+                    self.piper.GripperCtrl(abs(joint_6), 3000, 0x01, 0)
                 # 默认1N
-                else: self.piper.GripperCtrl(abs(joint_6), 1000, 0x01, 0)
+                else: self.piper.GripperCtrl(abs(joint_6), 3000, 0x01, 0)
 
     def joint_callback(self, joint_data):
         """机械臂关节角回调函数
