@@ -112,6 +112,10 @@ class C_PiperRosNode():
         self.piper = C_PiperInterface(can_name=self.can_port)
         self.piper.ConnectPort()
         self.piper.MotionCtrl_2(0x01, 0x01, 30,0)
+        try:
+            rospy.loginfo("ArmModeCtrl: %s", self.piper.GetArmModeCtrl())
+        except AttributeError:
+            rospy.logwarn("GetArmModeCtrl is not available in this piper_sdk version")
         self.block_ctrl_flag = False
         # 启动订阅线程
         sub_pos_th = threading.Thread(target=self.SubPosThread)
